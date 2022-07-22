@@ -1,0 +1,8 @@
+﻿<h3>INFORMATION:</h3>
+
+<a href="Home/API_Request">Get info</a>
+
+@if (!string.IsNullOrEmpty(ViewData["info"]?.ToString()))
+{
+    <p> @ViewData["info"] </p>
+}

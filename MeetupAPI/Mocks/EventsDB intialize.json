@@ -1,0 +1,44 @@
+[
+  {
+    "meetName": "Inovations of 2017 y.",
+    "theme": "science",
+    "desctiprion": "some description \n in few lines",
+    "schedule": [
+      "fees",
+      "greetings",
+      "microsoft stand",
+      "google stand",
+      "amazon stand",
+      "the ending"
+    ],
+    "orginizer": "world scientific community",
+    "speeker": "Boris Yakovlev",
+    "time": "12:12:12 12.12.2017",
+    "place": "England, London"
+  },
+  {
+    "meetName": "Birthday party",
+    "theme": "entertainment",
+    "desctiprion": "Polina Sozontzova`s pary for her 18th birthday",
+    "schedule": null,
+    "orginizer": "Polina Sozontzova",
+    "speeker": "Polina Sozontzova",
+    "time": "18:00:00 24.07.2020",
+    "place": "pros. Mira, 24"
+  },
+  {
+    "meetName": "Brazil Carnival",
+    "theme": "entertainment",
+    "desctiprion": "The Carnival of Brazil is an annual Brazilian festival held the Friday afternoon before Ash Wednesday at noon",
+    "schedule": [
+      "Imperio Serrano",
+      "Grande Rio",
+      "Mosidade",
+      "Unidos Da Tijuca"
+    ],
+    "orginizer": "Goverment",
+    "speeker": "Porto Seguro",
+    "time": "24:00:00 12.02.2020",
+    "place": "Brazil"
+  }
+]

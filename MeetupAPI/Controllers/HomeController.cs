@@ -4,6 +4,7 @@ using MeetupAPI.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using AppDbContext = MeetupAPI.DbContext.AppDbContext;
 
 namespace MeetupAPI;
@@ -19,83 +20,104 @@ public class HomeController : ControllerBase
         _db = db;
     }
     
-    /*[HttpGet]
-    [Route("getEvents")]
-    public string GetEvents()
+    [HttpGet("getEvents")]
+    public JsonResult GetEvents()
     {
-        return JsonSerializer.Serialize(_db.Events.ToList());
-    }*/
-    
-    [HttpGet]
-    [Route("getEvents")]
-    public string GetEvents(string org)
-    {
-        if(string.IsNullOrEmpty(org))
-            return JsonSerializer.Serialize(_db.Events.ToList());
-        else
-            return JsonSerializer.Serialize(_db.Events.Where(x => x.Orgonizer == org).ToList());
+        HttpContext.Response.Headers.ContentType = "application/json";
+        HttpContext.Response.StatusCode = 200;
+        
+        var queryString = HttpContext.Request.Query;
+
+        if (queryString.ContainsKey("org"))
+        {
+            var org = queryString["org"].ToString();
+
+            return new JsonResult(_db.Events
+                .Include(x => x.Theme)
+                .Where(x => x.OrgonizerEmail == org)
+                .ToList());
+        }
+
+        return new JsonResult(_db.Events.Include(x => x.Theme).ToList());
     }
     
-    [HttpGet]
-    [Route("getEvent")]
-    public string GetEvent()
+    [HttpGet("getEvent")]
+    public JsonResult GetEvent()
     {
         var queryStrings = HttpContext.Request.Query;
 
-        if (queryStrings.Any(x => x.Key == "id"))
+        if (queryStrings.ContainsKey("id"))
         {
-            var id = queryStrings.First(x => x.Key == "id").Value;
+            var id = queryStrings["id"].ToString();
 
             if (_db.Events.Any(x => x.Id.ToString().Equals(id)))
             {
-                return JsonSerializer.Serialize(
-                    _db.Events.First(x => x.Id.ToString().Equals(id)));
+                HttpContext.Response.StatusCode = 200;
+                return new JsonResult(
+                    _db.Events
+                        .Include(x => x.Theme)
+                        .First(x => x.Id.ToString().Equals(id)));
             }
         }
 
-        Event e = null;
-        return JsonSerializer.Serialize(e);
+        HttpContext.Response.StatusCode = 404;
+        return new JsonResult(null);
     }
 
-    [HttpPost]
-    [Route("addEvent")]
+    [HttpPost("addEvent")]
     public void AddEvent([FromBody] Event eventObject)
     {
+        CheckForThemes(ref eventObject);
+
         _db.Events.AddAsync(eventObject);
         _db.SaveChanges();
     }
     
-    [HttpPut]
-    [Route("updateEvent")]
+    [HttpPut("updateEvent")]
     public void UpdateEvent([FromBody] Event eventObject)
     {
-        var prev = _db.Events.First(x => x.Id == eventObject.Id);
+        CheckForThemes(ref eventObject);
         
-        prev.MeetupName = eventObject.MeetupName;
-        prev.Theme = eventObject.Theme;
-        prev.Description = eventObject.Description;
-        prev.Orgonizer = eventObject.Orgonizer;
-        prev.Speeker = eventObject.Speeker;
-        prev.Time = eventObject.Time;
-        prev.Location = eventObject.Location;
-        
-        _db.Events.Update(prev);
+        _db.Events.Update(eventObject);
         _db.SaveChanges();
     }
     
-    [HttpDelete]
-    [Route("deleteEvent")]
-    public void DeleteEvent(string eventId)
+    [HttpDelete("deleteEvent")]
+    public void DeleteEvent()
     {
-        var events = _db.Events.ToList();
+        var queryString = HttpContext.Request.Query;
 
-        if (events.Any(x => x.Id.ToString().Equals(eventId)))
+        if (queryString.ContainsKey("id"))
         {
-            Event rEvent = events.Where( x => x.Id.ToString().Equals(eventId) ).First();
+            var id = queryString["id"].ToString();
+            
+            var events = _db.Events.ToList();
 
-            _db.Events.Remove(rEvent);
-            _db.SaveChanges();
+            if (events.Any(x => x.Id.ToString().Equals(id)))
+            {
+                Event rEvent = events.Where( x => x.Id.ToString().Equals(id) ).First();
+
+                _db.Events.Remove(rEvent);
+                _db.SaveChanges();
+            }
         }
-        
+    }
+
+    public void CheckForThemes(ref Event old)
+    {
+        Theme completeTheme = old.Theme;
+
+        if (_db.Themes.Any(x => x.Value == completeTheme.Value))
+        {
+            completeTheme = _db.Themes.First(x => x.Value == completeTheme.Value);
+        }
+        else
+        {
+            _db.Themes.Add(completeTheme);
+            _db.SaveChanges();
+            completeTheme = _db.Themes.Where(x => x.Value == completeTheme.Value).First();
+        }
+
+        old.Theme = completeTheme;
     }
 }

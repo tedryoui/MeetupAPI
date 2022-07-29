@@ -25,7 +25,7 @@ public class AccountController : Controller
         _signInManager = signInManager;
     }
     
-    [Route("[action]")]
+    [HttpGet("[action]")]
     public IActionResult Login(string returnUrl)
     {
         var viewModel = new LoginViewModel()
@@ -36,8 +36,7 @@ public class AccountController : Controller
         return View("Login", viewModel);
     }
 
-    [Route("[action]")]
-    [HttpPost]
+    [HttpPost("[action]")]
     public async Task<IActionResult> Login(LoginViewModel viewModel)
     {
         if (ModelState.IsValid)
@@ -55,7 +54,7 @@ public class AccountController : Controller
         return View("Login", viewModel);
     }
     
-    [Route("[action]")]
+    [HttpGet("[action]")]
     public async Task<IActionResult> Logout(string logoutId)
     {
         if (User.Identity.IsAuthenticated)
@@ -69,8 +68,7 @@ public class AccountController : Controller
         return Redirect("httsp://localhost:7003/");
     }
 
-    [Route("[action]")]
-    [HttpPost]
+    [HttpPost("[action]")]
     public async Task<IActionResult> Register(LoginViewModel viewModel)
     {
         if (ModelState.IsValid)

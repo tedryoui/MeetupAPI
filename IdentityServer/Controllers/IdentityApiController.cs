@@ -15,11 +15,22 @@ public class IdentityApiController : Controller
         _userManager = userManager;
     }
     
-    [HttpGet]
-    [Route("getUser")]
-    public async Task<string> GetUser(string id)
+    [HttpGet("getUser")]
+    public async Task<JsonResult> GetUser()
     {
-        var user = await _userManager.FindByIdAsync(id);
-        return JsonSerializer.Serialize(user);
+        var query = HttpContext.Request.Query;
+
+        if (query.ContainsKey("id"))
+        {
+            var id = query["id"].ToString();
+            
+            var user = await _userManager.FindByIdAsync(id);
+
+            HttpContext.Response.StatusCode = 200;
+            return new JsonResult(user);
+        }
+        
+        HttpContext.Response.StatusCode = 404;
+        return new JsonResult(null);
     }
 }

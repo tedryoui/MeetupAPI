@@ -30,7 +30,8 @@ public static class IS4Config
                 {
                     "api",
                     IdentityServerConstants.StandardScopes.Profile,
-                    IdentityServerConstants.StandardScopes.OpenId
+                    IdentityServerConstants.StandardScopes.OpenId,
+                    IdentityServerConstants.StandardScopes.Email
                 },
                 RedirectUris =
                 {
@@ -41,6 +42,19 @@ public static class IS4Config
                     "https://localhost:7003/signout-callback-oidc"  
                 },
                 RequireConsent = false
+            },
+            new Client()
+            {
+                ClientId = "client_swagger",
+                ClientSecrets = { new Secret("client_swagger_secret".Sha256()) },
+                AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
+                AllowedCorsOrigins = { "https://localhost:7000" },
+                AllowedScopes =
+                {
+                    "api",
+                    IdentityServerConstants.StandardScopes.Profile,
+                    IdentityServerConstants.StandardScopes.OpenId
+                }
             }
         };
 
@@ -55,14 +69,6 @@ public static class IS4Config
         {
             new IdentityResources.OpenId(),
             new IdentityResources.Profile(),
-            new IdentityResource()
-            {
-                Name = "role",
-                DisplayName = "Role",
-                UserClaims =
-                {
-                    ClaimTypes.Role
-                }
-            }
+            new IdentityResources.Email()
         };
 }

@@ -1,32 +1,18 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+using IdentityServer.DbContext;
 
 namespace MeetupAPI.Model;
 
 public class Event
 {
     public int Id { get; set; }
-    
-    [NotNull]
     public string MeetupName { get; set; }
-    
-    [NotNull]
-    public string Theme { get; set; }
-    
-    [AllowNull]
+    public Theme Theme { get; set; }
     public string Description { get; set; }
-    
-    [AllowNull]
     public string Schedule { get; set; }
-    
-    [NotNull]
-    public string Orgonizer { get; set; }
-    
-    [AllowNull]
-    public string Speeker { get; set; }
-    
-    [NotNull]
+    public string OrgonizerEmail { get; set; }
+    public string SpeekerEmail { get; set; }
     public DateTime Time { get; set; }
-    
-    [NotNull]
     public string Location { get; set; }
 }

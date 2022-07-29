@@ -1,7 +1,6 @@
 ﻿@using System.Security.Claims
 @using IdentityServer.DbContext
 @using Microsoft.AspNetCore.Mvc.TagHelpers
-@model MvcMeetupClient.ViewModels.EventsViewModel
 
 <div>
     <span>Refresh page</span>
@@ -18,12 +17,16 @@
 
 <div>
     <span>API interaction: </span><br>
-    <a asp-controller="Home" asp-action="ReceiveEvents">Get events</a><br>
-    <a asp-controller="Home" asp-action="ReceiveMyEvents">Get my events</a><br>
+    <button onclick="GetEvents()">Get ALL events</button><br>
+    @if(User.Identity.IsAuthenticated)
+    {
+        <button onclick="GetMyEvents()">Get MY events</button>
+        <br>
+    }
     
     <div class="idSearch">
         <input type="text" name="id">
-        <button onclick="GetById()">Get</button>
+        <button onclick="GetEvent()">Get</button>
     </div>
     
     @if (User.Identity.IsAuthenticated)
@@ -36,7 +39,7 @@
             <input type="text" placeholder="Speeker" name="Speeker">
             <input type="date" name="Time">
             <input type="text" placeholder="Location" name="Location">
-            <button onclick="Send()">Confirm</button>
+            <button onclick="AddEvent()">Confirm</button>
         </div>
         
         <div class="Update" style="display: none">
@@ -47,7 +50,7 @@
             <input type="text" placeholder="Speeker" name="Speeker">
             <input type="date" name="Time">
             <input type="text" placeholder="Location" name="Location">
-            <button onclick="CompleteUpdate()">Confirm</button>
+            <button onclick="UpdateEvent()">Confirm</button>
         </div>
         
         <div>
@@ -63,138 +66,10 @@
     
 </div>
 
-<div>
+<div id="searchContainer">
     <span>Events</span>
     
-    @if (Model != null && Model.events.Count > 0)
-    {
-        foreach (var eventView in Model.events)
-        {
-            <text>
-                <div>
-                    <span>@eventView.MeetupName </span>
-                    <span>@eventView.Theme </span>
-                    <span>@eventView.Time.ToString()</span>
-                    
-                    @if(eventView.Orgonizer == User.FindFirst("name").Value)
-                    {
-                        <button onclick="Delete(@eventView.Id)">Delete</button>
-                        <button onclick="Update(@eventView.Id)">Update</button>
-                    }
-                </div>
-            </text>
-        }
-    }
 </div>
 
-@if (User.Identity.IsAuthenticated)
-{
-    <script >
-    let isUpdating = false;
-        let updatingInstanceId;
-function Send() {
-    
-    
-    
-    let model = {
-        MeetupName : document.querySelector(".add input[name='MeetupName']").value,
-        Theme : document.querySelector(".add input[name='Theme']").value,
-        Description : document.querySelector(".add input[name='Description']").value,
-        Schedule : null,
-        Orgonizer : null,
-        Speeker : document.querySelector(".add input[name='Speeker']").value,
-        Time : document.querySelector(".add input[name='Time']").value,
-        Location : document.querySelector(".add input[name='Location']").value
-    }
-    
-    fetch("/SendEvent", {
-        method: "POST",
-        body: JSON.stringify(model),
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }).then(response => response.json()).then(data => {if(data.success == true) window.location.reload()});
-}
+<script src="js/apiFunctions.js"></script>
 
-function Delete(eventId) {
-    fetch("/RequestDelete", {
-        method: "DELETE",
-        body: JSON.stringify(eventId),
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-}
-
-function GetById() {
-    let id = document.querySelector(".idSearch input").value;
-    
-    fetch("/ReceiveEvent?id=" + id, {
-        method: "get",
-        headers: {
-         "Content-Type": "application/json"    
-        }
-    }).then(response => response.json()).then(data => {
-        if (data.success == true) {
-            console.log(JSON.parse(data.info));    
-        }    
-    });
-}
-
-function Update(eventId) {
-    let updateBlock = document.querySelector(".Update");
-    updateBlock.style.display = "block";
-    
-    let ev = {};
-    
-    fetch("/ReceiveEvent?id=" + eventId, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    }).then(response => response.json()).then(data => {
-        if (data.success == true) {
-            ev = JSON.parse(data.info);
-            
-            document.querySelector(".Update input[name='MeetupName']").value = ev.MeetupName;
-            document.querySelector(".Update input[name='Theme']").value = ev.Theme;
-            document.querySelector(".Update input[name='Description']").value = ev.Description;
-            document.querySelector(".Update input[name='Speeker']").value = ev.Speeker;
-            document.querySelector(".Update input[name='Time']").value = ev.Time;
-            document.querySelector(".Update input[name='Location']").value = ev.Location;
-            
-            isUpdating = true;
-            updatingInstanceId = eventId;
-        }    
-    });
-    
-    
-}
-
-function CompleteUpdate() {
-    if (isUpdating) {
-        let model = {
-            Id : updatingInstanceId,
-            MeetupName : document.querySelector(".Update input[name='MeetupName']").value,
-            Theme : document.querySelector(".Update input[name='Theme']").value,
-            Description : document.querySelector(".Update input[name='Description']").value,
-            Schedule : null,
-            Orgonizer : null,
-            Speeker : document.querySelector(".Update input[name='Speeker']").value,
-            Time : document.querySelector(".Update input[name='Time']").value,
-            Location : document.querySelector(".Update input[name='Location']").value
-        }
-        
-        console.log(model);
-        
-        fetch("/UpdateEvent", {
-            method: "POST",
-            body: JSON.stringify(model),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        }).then(response => response.json()).then(data => {if(data.success == true) window.location.reload()});
-    }
-}
-</script>
-}

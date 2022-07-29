@@ -4,6 +4,7 @@ using MeetupAPI.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MeetupAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20220728170848_Inititalize")]
+    partial class Inititalize
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,14 +43,13 @@ namespace MeetupAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OrgonizerEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("OrgonizerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Schedule")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SpeekerEmail")
+                    b.Property<string>("Speeker")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ThemeId")
@@ -59,9 +60,32 @@ namespace MeetupAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OrgonizerId");
+
                     b.HasIndex("ThemeId");
 
                     b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("MeetupAPI.Model.Orgonizer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Orgonizers");
                 });
 
             modelBuilder.Entity("MeetupAPI.Model.Theme", b =>
@@ -74,24 +98,35 @@ namespace MeetupAPI.Migrations
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasAlternateKey("Value");
 
                     b.ToTable("Themes");
                 });
 
             modelBuilder.Entity("MeetupAPI.Model.Event", b =>
                 {
+                    b.HasOne("MeetupAPI.Model.Orgonizer", "Orgonizer")
+                        .WithMany("Events")
+                        .HasForeignKey("OrgonizerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MeetupAPI.Model.Theme", "Theme")
                         .WithMany("Events")
                         .HasForeignKey("ThemeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Orgonizer");
+
                     b.Navigation("Theme");
+                });
+
+            modelBuilder.Entity("MeetupAPI.Model.Orgonizer", b =>
+                {
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("MeetupAPI.Model.Theme", b =>

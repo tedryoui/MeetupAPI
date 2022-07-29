@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using AutoMapper;
 using IdentityModel.Client;
 using IdentityServer.DbContext;
 using MeetupAPI.Model;
@@ -15,174 +16,168 @@ namespace MvcMeetupClient.Controllers;
 public class HomeController : Controller
 {
     private readonly IHttpClientFactory _factory;
+    private readonly IMapper _mapper;
 
-    public HomeController(IHttpClientFactory factory)
+    public HomeController(IHttpClientFactory factory,
+        IMapper mapper)
     {
         _factory = factory;
+        _mapper = mapper;
     }
 
     public async Task<IActionResult> Index()
     {
-        GetUserInfo();
-
         return View();
     }
 
-    private async Task GetUserInfo()
+    [Authorize]
+    [Route("[action]")]
+    public async Task<IActionResult> Login() => View("Index");
+
+    [Authorize]
+    [Route("Logout")]
+    public async Task<IActionResult> Logout() => SignOut(CookieAuthenticationDefaults.AuthenticationScheme,
+        OpenIdConnectDefaults.AuthenticationScheme);
+    
+    private async Task<UserIdentity> GetUserInfo(string nameIdentifier)
     {
-        ViewBag.UserName = User.FindFirst("name").Value;
+        HttpClient authClient = _factory.CreateClient();
+        var response = await authClient.GetAsync($"https://localhost:7001/api/getUser?id={nameIdentifier}");
+        var user = await response.Content.ReadFromJsonAsync<UserIdentity>();
+
+        return user;
     }
 
-    [HttpGet]
-    [Route("[action]")]
-    public async Task<IActionResult> ReceiveEvents()
+    [HttpGet("[action]")]
+    public async Task<JsonResult> RequestEvents()
     {
         HttpClient httpClient = _factory.CreateClient();
         httpClient.SetBearerToken(await GetAccessToken());
         
         var result = await httpClient.GetAsync("https://localhost:7000/api/getEvents");
-        var resultDeserialized = new List<Event>();
-
-        if (result.IsSuccessStatusCode)
-            resultDeserialized = JsonSerializer.Deserialize<List<Event>>(await result.Content.ReadAsStringAsync());
+        var events = await result.Content.ReadFromJsonAsync<List<Event>>();
         
-        return View("Index", ConvertToViewModel(resultDeserialized));
+        if (result.IsSuccessStatusCode)
+            return Json(new
+            {
+                success = true,
+                info = _mapper.Map<List<FullEventViewModel>>(events)
+            });
+        
+        return Json(new
+            {
+                success = false,
+                info = new List<Event>()
+            });
     }
     
-    [HttpGet]
-    [Route("[action]")]
-    public async Task<IActionResult> ReceiveMyEvents()
+    [Authorize]
+    [HttpGet("[action]")]
+    public async Task<JsonResult> RequestMyEvents()
     {
-        var me = User.FindFirst("name").Value;
-        
+        var userEmail = (await GetUserInfo(User.FindFirst(ClaimTypes.NameIdentifier).Value)).Email;
+
         HttpClient httpClient = _factory.CreateClient();
         httpClient.SetBearerToken(await GetAccessToken());
-        
-        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?org={me}");
-        var resultDeserialized = new List<Event>();
+
+        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?org={userEmail}");
+        var events = await result.Content.ReadFromJsonAsync<List<Event>>();
 
         if (result.IsSuccessStatusCode)
-            resultDeserialized = JsonSerializer.Deserialize<List<Event>>(await result.Content.ReadAsStringAsync());
+            return Json(new
+            {
+                success = true,
+                info = _mapper.Map<List<FullEventViewModel>>(events)
+            });
         
-        return View("Index", ConvertToViewModel(resultDeserialized));
+        return Json(new
+            {
+                success = false,
+                info = new List<Event>()
+            });;
     }
     
-    [HttpGet]
-    [Route("[action]")]
+    [HttpGet("[action]")]
     public async Task<JsonResult> ReceiveEvent()
     {
         var queryString = HttpContext.Request.Query;
 
-        if (queryString.Any(x => x.Key == "id"))
+        if (queryString.ContainsKey("id"))
         {
-            var queryValue = queryString.First(x => x.Key == "id").Value;
+            var id = queryString["id"].ToString();
             
             HttpClient httpClient = _factory.CreateClient();
             httpClient.SetBearerToken(await GetAccessToken());
         
-            var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvent?id={queryValue}");
-            var resultDeserialized = new Event();
+            var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvent?id={id}");
+            var ev = await result.Content.ReadFromJsonAsync<Event>();
         
             if (result.IsSuccessStatusCode)
-                resultDeserialized = JsonSerializer.Deserialize<Event>(await result.Content.ReadAsStringAsync());
+                return Json(new {
+                    success = true, 
+                    info = _mapper.Map<FullEventViewModel>(ev)
+                });
+        }
+        
+        return Json(new {
+            success = false, 
+            info = new Event()
+        });
+    }
 
-            if (!resultDeserialized.Equals(null))
-                return Json(new {success = true, info = JsonSerializer.Serialize(resultDeserialized)});
+    [Authorize]
+    [HttpPost("[action]")]
+    public async Task<JsonResult> RequestAdd([FromBody] FullEventViewModel eventViewModel)
+    {
+        Event completeEvent = _mapper.Map<Event>(eventViewModel);
+        completeEvent.OrgonizerEmail = (await GetUserInfo(User.FindFirst(ClaimTypes.NameIdentifier).Value)).Email;
+
+        HttpClient httpClient = _factory.CreateClient();
+        httpClient.SetBearerToken(await GetAccessToken());
+
+        var result = 
+            httpClient.PostAsJsonAsync("https://localhost:7000/api/addEvent", completeEvent);
+        
+        return Json(new {success = true});
+    }
+
+    [Authorize]
+    [HttpPost("[action]")]
+    public async Task<JsonResult> UpdateEvent([FromBody] FullEventViewModel eventViewModel)
+    {
+        var completeEvent = _mapper.Map<Event>(eventViewModel);
+        completeEvent.OrgonizerEmail = (await GetUserInfo(User.FindFirst(ClaimTypes.NameIdentifier).Value)).Email;
+        
+        HttpClient httpClient = _factory.CreateClient();
+        httpClient.SetBearerToken(await GetAccessToken());
+
+        var result = httpClient.PutAsJsonAsync(
+            "https://localhost:7000/api/updateEvent",
+            completeEvent
+        );
+        
+        return Json(new {success = true});
+    }
+    
+    [Authorize]
+    [HttpDelete("[action]")]
+    public async Task<JsonResult> RequestDelete()
+    {
+        var queryString = HttpContext.Request.Query;
+        if (queryString.ContainsKey("id"))
+        {
+            var id = queryString["id"].ToString();
+            
+            HttpClient httpClient = _factory.CreateClient();
+            httpClient.SetBearerToken(await GetAccessToken());
+
+            var result = httpClient.DeleteAsync(
+                $"https://localhost:7000/api/deleteEvent?id={id}");
+        
+            return Json(new {success = true});
         }
         
         return Json(new {success = false});
-    }
-
-    [HttpPost]
-    [Authorize]
-    [Route("SendEvent")]
-    public async Task<JsonResult> SendEvent([FromBody] EventViewModel eventViewModel)
-    {
-        eventViewModel.Orgonizer = User.FindFirst("name").Value;
-        
-        HttpClient httpClient = _factory.CreateClient();
-        httpClient.SetBearerToken(await GetAccessToken());
-        
-        StringContent content = new StringContent(
-            JsonSerializer.Serialize(ConvertToModel(eventViewModel)),
-            Encoding.UTF8,
-            "application/json");
-
-        var result = httpClient.PostAsync(
-        "https://localhost:7000/api/addEvent",
-                content
-            );
-        
-        return Json(new
-        {
-            success = true
-        });
-    }
-    
-    [HttpPost]
-    [Authorize]
-    [Route("UpdateEvent")]
-    public async Task<JsonResult> UpdateEvent([FromBody] EventViewModel model)
-    {
-        model.Orgonizer = User.FindFirst("name").Value;
-    
-        HttpClient httpClient = _factory.CreateClient();
-        httpClient.SetBearerToken(await GetAccessToken());
-    
-        StringContent content = new StringContent(
-            JsonSerializer.Serialize(ConvertToModel(model)),
-            Encoding.UTF8,
-            "application/json");
-
-        var result = httpClient.PutAsync(
-            "https://localhost:7000/api/updateEvent",
-            content
-        );
-        
-        return Json(new
-        {
-            success = true
-        });
-    }
-
-    [Route("Login")]
-    [Authorize]
-    public async Task<IActionResult> Login()
-    {
-        GetUserInfo();
-        
-        return View("Index");
-    }
-    
-    [Route("Logout")]
-    [Authorize]
-    public async Task<IActionResult> Logout()
-    {
-        GetUserInfo();
-        
-        return SignOut(
-            CookieAuthenticationDefaults.AuthenticationScheme, 
-            OpenIdConnectDefaults.AuthenticationScheme
-            );
-    }
-    
-    [HttpDelete]
-    [Route("RequestDelete")]
-    [Authorize]
-    public async Task<JsonResult> RequestDelete([FromBody]int eventId)
-    {
-        HttpClient httpClient = _factory.CreateClient();
-        httpClient.SetBearerToken(await GetAccessToken());
-        
-        StringContent content = new StringContent(
-            JsonSerializer.Serialize(eventId),
-            Encoding.UTF8,
-            "application/json");
-
-        var result = httpClient.DeleteAsync(
-            $"https://localhost:7000/api/deleteEvent?eventId={eventId}");
-        
-        return Json(true);
     }
 
     public async Task<string> GetAccessToken()
@@ -206,61 +201,4 @@ public class HomeController : Controller
 
         return tokenResponse.AccessToken;
     }
-    
-    private EventsViewModel ConvertToViewModel(List<Event> result)
-    {
-        var viewModel = new EventsViewModel();
-
-        foreach (Event e in result)
-        {
-            viewModel.events.Add(new EventViewModel()
-            {
-                Id = e.Id,
-                MeetupName = e.MeetupName,
-                Theme = e.Theme,
-                Description = e.Description,
-                Location = e.Location,
-                Orgonizer = e.Orgonizer,
-                Schedule = JsonSerializer.Deserialize<List<string>>(e.Schedule),
-                Speeker = e.Speeker,
-                Time = e.Time
-            });
-        }
-
-        return viewModel;
-    }
-    
-    private EventsViewModel ConvertToViewModel(Event result)
-    {
-        var viewModel = new EventsViewModel();
-
-        viewModel.events.Add(new EventViewModel()
-        {
-            Id = result.Id,
-            MeetupName = result.MeetupName,
-            Theme = result.MeetupName,
-            Description = result.Description,
-            Location = result.Location,
-            Orgonizer = result.Orgonizer,
-            Schedule = JsonSerializer.Deserialize<List<string>>(result.Schedule),
-            Speeker = result.Speeker,
-            Time = result.Time
-        });
-
-        return viewModel;
-    }
-
-    public Event ConvertToModel(EventViewModel vm) => 
-        new ()
-        {
-            Id = vm.Id,
-            MeetupName = vm.MeetupName,
-            Theme = vm.Theme,
-            Description = vm.Description,
-            Schedule = JsonSerializer.Serialize(vm.Schedule),
-            Orgonizer = vm.Orgonizer,
-            Location = vm.Location,
-            Speeker = vm.Speeker,
-            Time = vm.Time
-        };
 }

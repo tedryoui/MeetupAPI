@@ -48,7 +48,7 @@ namespace MeetupAPI.Migrations
                     b.Property<string>("Schedule")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SpeekerEmail")
+                    b.Property<string>("SpeekerName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ThemeId")

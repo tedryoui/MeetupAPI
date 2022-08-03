@@ -12,7 +12,8 @@ public class Event
     public string Description { get; set; }
     public string Schedule { get; set; }
     public string OrgonizerEmail { get; set; }
-    public string SpeekerEmail { get; set; }
+    public string SpeekerName { get; set; }
+    
     public DateTime Time { get; set; }
     public string Location { get; set; }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MeetupAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20220729135609_newMigration")]
-    partial class newMigration
+    [Migration("20220802100828_Fix1_1")]
+    partial class Fix1_1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -50,7 +50,7 @@ namespace MeetupAPI.Migrations
                     b.Property<string>("Schedule")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SpeekerEmail")
+                    b.Property<string>("SpeekerName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ThemeId")

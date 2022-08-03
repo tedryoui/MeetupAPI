@@ -23,19 +23,27 @@ public class HomeController : ControllerBase
     [HttpGet("getEvents")]
     public JsonResult GetEvents()
     {
-        HttpContext.Response.Headers.ContentType = "application/json";
-        HttpContext.Response.StatusCode = 200;
-        
         var queryString = HttpContext.Request.Query;
 
-        if (queryString.ContainsKey("org"))
+        if (!queryString.ContainsKey("amount"))
         {
-            var org = queryString["org"].ToString();
+            HttpContext.Response.StatusCode = 404;
+            return new JsonResult(null);
+        }
 
-            return new JsonResult(_db.Events
-                .Include(x => x.Theme)
-                .Where(x => x.OrgonizerEmail == org)
-                .ToList());
+        int amount, page; 
+        var pageString = (queryString.ContainsKey("page")) ? queryString["page"].ToString() : "0";
+
+        if (Int32.TryParse(queryString["amount"].ToString(), out amount) &&
+            Int32.TryParse(pageString, out page))
+        {
+            if (queryString.ContainsKey("org"))
+                return new JsonResult(
+                    _db.Events.Include(x => x.Theme).Where(x => x.OrgonizerEmail == queryString["org"].ToString())
+                        .Skip((page - 1) * amount).Take(amount).ToList());
+            else
+                return new JsonResult(
+                    _db.Events.Include(x => x.Theme).Skip((page - 1) * amount).Take(amount).ToList());
         }
 
         return new JsonResult(_db.Events.Include(x => x.Theme).ToList());
@@ -57,6 +65,18 @@ public class HomeController : ControllerBase
                     _db.Events
                         .Include(x => x.Theme)
                         .First(x => x.Id.ToString().Equals(id)));
+            }
+        } else if (queryStrings.ContainsKey("name"))
+        {
+            var name = queryStrings["name"].ToString();
+
+            if (_db.Events.Any(x => x.MeetupName.Contains(name)))
+            {
+                HttpContext.Response.StatusCode = 200;
+                return new JsonResult(
+                    _db.Events
+                        .Include(x => x.Theme)
+                        .First(x => x.MeetupName.Contains(name)));
             }
         }
 

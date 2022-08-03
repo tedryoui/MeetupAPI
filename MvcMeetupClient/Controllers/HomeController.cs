@@ -51,10 +51,17 @@ public class HomeController : Controller
     [HttpGet("[action]")]
     public async Task<JsonResult> RequestEvents()
     {
+        var queryString = HttpContext.Request.Query;
+
+        if (!queryString.ContainsKey("amount")) return new JsonResult(new {success = false});
+        var amount = queryString["amount"].ToString();
+
+        var page = (queryString.ContainsKey("page")) ? queryString["page"].ToString() : "0";
+        
         HttpClient httpClient = _factory.CreateClient();
         httpClient.SetBearerToken(await GetAccessToken());
         
-        var result = await httpClient.GetAsync("https://localhost:7000/api/getEvents");
+        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?page={page}&amount={amount}");
         var events = await result.Content.ReadFromJsonAsync<List<Event>>();
         
         if (result.IsSuccessStatusCode)
@@ -76,11 +83,18 @@ public class HomeController : Controller
     public async Task<JsonResult> RequestMyEvents()
     {
         var userEmail = (await GetUserInfo(User.FindFirst(ClaimTypes.NameIdentifier).Value)).Email;
+        
+        var queryString = HttpContext.Request.Query;
+        
+        if (!queryString.ContainsKey("amount")) return new JsonResult(new {success = false});
+        var amount = queryString["amount"].ToString();
+
+        var page = (queryString.ContainsKey("page")) ? queryString["page"].ToString() : "0";
 
         HttpClient httpClient = _factory.CreateClient();
         httpClient.SetBearerToken(await GetAccessToken());
 
-        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?org={userEmail}");
+        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?page={page}&amount={amount}&org={userEmail}");
         var events = await result.Content.ReadFromJsonAsync<List<Event>>();
 
         if (result.IsSuccessStatusCode)
@@ -98,18 +112,31 @@ public class HomeController : Controller
     }
     
     [HttpGet("[action]")]
-    public async Task<JsonResult> ReceiveEvent()
+    public async Task<JsonResult> RequestEvent()
     {
         var queryString = HttpContext.Request.Query;
+        
+        HttpClient httpClient = _factory.CreateClient();
+        httpClient.SetBearerToken(await GetAccessToken());
 
         if (queryString.ContainsKey("id"))
         {
             var id = queryString["id"].ToString();
             
-            HttpClient httpClient = _factory.CreateClient();
-            httpClient.SetBearerToken(await GetAccessToken());
-        
             var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvent?id={id}");
+            var ev = await result.Content.ReadFromJsonAsync<Event>();
+        
+            if (result.IsSuccessStatusCode)
+                return Json(new {
+                    success = true, 
+                    info = _mapper.Map<FullEventViewModel>(ev)
+                });
+        }
+        else if (queryString.ContainsKey("name"))
+        {
+            var name = queryString["name"].ToString();
+            
+            var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvent?name={name}");
             var ev = await result.Content.ReadFromJsonAsync<Event>();
         
             if (result.IsSuccessStatusCode)
@@ -121,7 +148,7 @@ public class HomeController : Controller
         
         return Json(new {
             success = false, 
-            info = new Event()
+            info = new FullEventViewModel()
         });
     }
 

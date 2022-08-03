@@ -26,32 +26,24 @@ public class AccountController : Controller
     }
     
     [HttpGet("[action]")]
-    public IActionResult Login(string returnUrl)
-    {
-        var viewModel = new LoginViewModel()
-        {
-            ReturnUrl = returnUrl
-        };
-        
-        return View("Login", viewModel);
-    }
+    public IActionResult Login(string returnUrl) => View("Login");
 
     [HttpPost("[action]")]
-    public async Task<IActionResult> Login(LoginViewModel viewModel)
+    public async Task<JsonResult> Login([FromBody] LoginViewModel viewModel)
     {
         if (ModelState.IsValid)
         {
-            var user = await _userManager.FindByNameAsync(viewModel.Username);
+            var user = await _userManager.FindByEmailAsync(viewModel.Email);
 
-            var result = await _signInManager.PasswordSignInAsync(user, viewModel.Password, false, false);
+            var result = await _signInManager.PasswordSignInAsync(user, viewModel.Password, viewModel.IsRemember, false);
 
             if (result.Succeeded)
             {
-                return Redirect(viewModel.ReturnUrl);
+                return Json(new {success = true});
             }
         }
         
-        return View("Login", viewModel);
+        return Json(new {success = false});
     }
     
     [HttpGet("[action]")]
@@ -69,10 +61,8 @@ public class AccountController : Controller
     }
 
     [HttpPost("[action]")]
-    public async Task<IActionResult> Register(LoginViewModel viewModel)
+    public async Task<JsonResult> Register([FromBody] RegisterViewModel viewModel)
     {
-        if (ModelState.IsValid)
-        {
             var user = new UserIdentity()
             {
                 UserName = viewModel.Username,
@@ -85,9 +75,6 @@ public class AccountController : Controller
 
             var result = await _signInManager.PasswordSignInAsync(user, viewModel.Password, false, false);
 
-            return Redirect(viewModel.ReturnUrl);
-        }
-        
-        return View("Login", viewModel);
+            return Json(new {success = true});
     }
 }

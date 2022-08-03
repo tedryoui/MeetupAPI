@@ -18,7 +18,7 @@ public class AppDbContext : Microsoft.EntityFrameworkCore.DbContext
     {
         modelBuilder.Entity<Event>().Property(p => p.Description).IsRequired(false);
         modelBuilder.Entity<Event>().Property(p => p.Schedule).IsRequired(false);
-        modelBuilder.Entity<Event>().Property(p => p.SpeekerEmail).IsRequired(false);
+        modelBuilder.Entity<Event>().Property(p => p.SpeekerName).IsRequired(false);
 
         modelBuilder.Entity<Event>().HasOne(s => s.Theme).WithMany(d => d.Events);
 

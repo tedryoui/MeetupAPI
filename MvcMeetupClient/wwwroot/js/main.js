@@ -257,7 +257,7 @@ function EditEvent(eventId) {
             editModal.MeetupName.value = ev.meetupName;
             editModal.Theme.value = ev.theme;
             editModal.Description.value = ev.description;
-            editModal.Speeker.value = ev.speeker;
+            editModal.Speeker.value = ev.speekerName;
             editModal.Time.valueAsDate = new Date(ev.time);
             editModal.Location.value = ev.location;
             editModal.ViewSchedule(ev.schedule);

@@ -123,6 +123,7 @@ public class HomeController : ControllerBase
         }
     }
 
+    [HttpPost("checkForThemes")]
     public void CheckForThemes(ref Event old)
     {
         Theme completeTheme = old.Theme;

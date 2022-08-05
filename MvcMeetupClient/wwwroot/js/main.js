@@ -328,12 +328,13 @@ function ViewEvent(eventId) {
     }).then(response => response.json()).then(data => {
         if (data.success == true) {
             let ev = data.info;
+            
             viewModal.ClearModal();
             viewModal.Id.innerText = ev.id;
             viewModal.MeetupName.innerHTML = ev.meetupName;
             viewModal.Theme.innerHTML = ev.theme;
             viewModal.Description.innerHTML = ev.description;
-            viewModal.Speeker.innerHTML = ev.speeker;
+            viewModal.Speeker.innerHTML = ev.speekerName;
             viewModal.Time.innerHTML = ev.time;
             viewModal.Location.innerHTML = ev.location;
             viewModal.ViewSchedule(ev.schedule);

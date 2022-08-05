@@ -1,0 +1,68 @@
+:root {
+    --russian-violet: #261447ff;
+    --bitter-lime: #cafe48ff;
+    --eerie-black: #1e1e1eff;
+    --black-olive: #3d3b30ff;
+    --lavender-blush: #fdecefff;
+}
+
+*:hover:not([type="checkbox"]),
+*:focus:not([type="checkbox"]),
+*:active:not([type="checkbox"])
+{
+    outline: none;
+    box-shadow: none !important;
+    -webkit-appearance: none;
+}
+
+body {
+    width: 100%;
+    min-height: 100%;
+
+    background: var(--black-olive);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    width: 30%;
+    padding: 25px;
+
+    background: var(--eerie-black);
+    border-radius: 5px;
+}
+
+.auth-form-switch {
+    width: 100%;
+
+    display: flex;
+    gap: 25px;
+}
+
+.auth-form-switch > li {
+    flex-grow: 1;
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.auth-form-switch li a:not(.active) {
+    color: var(--bitter-lime) !important;
+}
+
+.auth-form-switch li a.active {
+    background: var(--bitter-lime) !important;
+    color: var(--russian-violet) !important;
+}
+
+.auth-form-content {
+    width: 100%;
+    color: var(--lavender-blush);
+}
+
+.auth-form-confirm {
+    background: var(--bitter-lime) !important;
+    color: var(--russian-violet) !important;
+}

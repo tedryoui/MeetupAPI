@@ -1,0 +1,7 @@
+﻿<p>Client page</p>
+<a href="Home/GetInfo">Get Info</a>
+
+@if (!string.IsNullOrEmpty(ViewData["info"]?.ToString()))
+{
+    <p> @ViewData["info"] </p>
+}

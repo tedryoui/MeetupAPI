@@ -17,18 +17,17 @@ public class HomeController : Controller
 {
     private readonly IHttpClientFactory _factory;
     private readonly IMapper _mapper;
+    private readonly IConfiguration _configuration;
 
     public HomeController(IHttpClientFactory factory,
-        IMapper mapper)
+        IMapper mapper, IConfiguration configuration)
     {
         _factory = factory;
         _mapper = mapper;
+        _configuration = configuration;
     }
 
-    public async Task<IActionResult> Index()
-    {
-        return View();
-    }
+    public async Task<IActionResult> Index() => View();
 
     [Authorize]
     [Route("[action]")]
@@ -42,7 +41,7 @@ public class HomeController : Controller
     private async Task<UserIdentity> GetUserInfo(string nameIdentifier)
     {
         HttpClient authClient = _factory.CreateClient();
-        var response = await authClient.GetAsync($"https://localhost:7001/api/getUser?id={nameIdentifier}");
+        var response = await authClient.GetAsync($"{_configuration.GetSection("ServiceUris")["is4"]}/api/getUser?id={nameIdentifier}");
         var user = await response.Content.ReadFromJsonAsync<UserIdentity>();
 
         return user;
@@ -61,7 +60,7 @@ public class HomeController : Controller
         HttpClient httpClient = _factory.CreateClient();
         httpClient.SetBearerToken(await GetAccessToken());
         
-        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?page={page}&amount={amount}");
+        var result = await httpClient.GetAsync($"{_configuration.GetSection("ServiceUris")["api"]}/api/getEvents?page={page}&amount={amount}");
         var events = await result.Content.ReadFromJsonAsync<List<Event>>();
         
         if (result.IsSuccessStatusCode)
@@ -94,7 +93,7 @@ public class HomeController : Controller
         HttpClient httpClient = _factory.CreateClient();
         httpClient.SetBearerToken(await GetAccessToken());
 
-        var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvents?page={page}&amount={amount}&org={userEmail}");
+        var result = await httpClient.GetAsync($"{_configuration.GetSection("ServiceUris")["api"]}/api/getEvents?page={page}&amount={amount}&org={userEmail}");
         var events = await result.Content.ReadFromJsonAsync<List<Event>>();
 
         if (result.IsSuccessStatusCode)
@@ -123,7 +122,7 @@ public class HomeController : Controller
         {
             var id = queryString["id"].ToString();
             
-            var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvent?id={id}");
+            var result = await httpClient.GetAsync($"{_configuration.GetSection("ServiceUris")["api"]}/api/getEvent?id={id}");
             var ev = await result.Content.ReadFromJsonAsync<Event>();
         
             if (result.IsSuccessStatusCode)
@@ -136,7 +135,7 @@ public class HomeController : Controller
         {
             var name = queryString["name"].ToString();
             
-            var result = await httpClient.GetAsync($"https://localhost:7000/api/getEvent?name={name}");
+            var result = await httpClient.GetAsync($"{_configuration.GetSection("ServiceUris")["api"]}/api/getEvent?name={name}");
             var ev = await result.Content.ReadFromJsonAsync<Event>();
         
             if (result.IsSuccessStatusCode)
@@ -163,7 +162,7 @@ public class HomeController : Controller
         httpClient.SetBearerToken(await GetAccessToken());
 
         var result = 
-            httpClient.PostAsJsonAsync("https://localhost:7000/api/addEvent", completeEvent);
+            httpClient.PostAsJsonAsync($"{_configuration.GetSection("ServiceUris")["api"]}/api/addEvent", completeEvent);
         
         return Json(new {success = true});
     }
@@ -179,7 +178,7 @@ public class HomeController : Controller
         httpClient.SetBearerToken(await GetAccessToken());
 
         var result = httpClient.PutAsJsonAsync(
-            "https://localhost:7000/api/updateEvent",
+            $"{_configuration.GetSection("ServiceUris")["api"]}/api/updateEvent",
             completeEvent
         );
         
@@ -199,7 +198,7 @@ public class HomeController : Controller
             httpClient.SetBearerToken(await GetAccessToken());
 
             var result = httpClient.DeleteAsync(
-                $"https://localhost:7000/api/deleteEvent?id={id}");
+                $"{_configuration.GetSection("ServiceUris")["api"]}/api/deleteEvent?id={id}");
         
             return Json(new {success = true});
         }
@@ -210,7 +209,7 @@ public class HomeController : Controller
     public async Task<string> GetAccessToken()
     {
         var client = new HttpClient();
-        var disco = await client.GetDiscoveryDocumentAsync("https://localhost:7001");
+        var disco = await client.GetDiscoveryDocumentAsync(_configuration.GetSection("ServiceUris")["is4"]);
         if (disco.IsError)
             return "";
         

@@ -25,7 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(context =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
-        options.Authority = "https://localhost:7001";
+        options.Authority = builder.Configuration.GetSection("ServiceUris")["is4"];
 
         options.TokenValidationParameters = new TokenValidationParameters()
         {
@@ -59,7 +59,7 @@ builder.Services.AddSwaggerGen(options =>
         {
             Password = new OpenApiOAuthFlow
             {
-                TokenUrl = new Uri("https://localhost:7001/connect/token"),
+                TokenUrl = new Uri($"{builder.Configuration.GetSection("ServiceUris")["is4"]}/connect/token"),
                 Scopes = new Dictionary<string, string>
                 {
                     {"api", "Meetup API"}

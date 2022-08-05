@@ -9,6 +9,8 @@ using MvcMeetupClient.ViewModels.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddControllersWithViews();
@@ -22,7 +24,7 @@ builder.Services.AddAuthentication(options =>
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
     {
-        options.Authority = "https://localhost:7001";
+        options.Authority = builder.Configuration.GetSection("ServiceUris")["is4"];
         
         options.ClientId = "client_mvc";
         options.ClientSecret = "client_mvc_secret";

@@ -15,14 +15,17 @@ public class AccountController : Controller
     private readonly IIdentityServerInteractionService _interactionService;
     private readonly UserManager<UserIdentity> _userManager;
     private readonly SignInManager<UserIdentity> _signInManager;
+    private readonly IConfiguration _configuration;
 
     public AccountController( IIdentityServerInteractionService interactionService,
                             UserManager<UserIdentity> userManager,
-                            SignInManager<UserIdentity> signInManager)
+                            SignInManager<UserIdentity> signInManager,
+                            IConfiguration configuration)
     {
         _interactionService = interactionService;
         _userManager = userManager;
         _signInManager = signInManager;
+        _configuration = configuration;
     }
     
     [HttpGet("[action]")]
@@ -57,7 +60,7 @@ public class AccountController : Controller
                 return Redirect(logoutResult.PostLogoutRedirectUri);
         }
         
-        return Redirect("httsp://localhost:7003/");
+        return Redirect(_configuration.GetSection("ServiceUris")["mvc"]);
     }
 
     [HttpPost("[action]")]
@@ -66,14 +69,14 @@ public class AccountController : Controller
             var user = new UserIdentity()
             {
                 UserName = viewModel.Username,
-                Email = $"{viewModel.Username}@somemail.com"
+                Email = viewModel.Email
             };
 
             await _userManager.CreateAsync(user, viewModel.Password);
 
             await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, "user"));
 
-            var result = await _signInManager.PasswordSignInAsync(user, viewModel.Password, false, false);
+            var result = await _signInManager.PasswordSignInAsync(user, viewModel.Password, viewModel.IsRemember, false);
 
             return Json(new {success = true});
     }

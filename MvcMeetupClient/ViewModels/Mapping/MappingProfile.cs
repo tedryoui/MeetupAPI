@@ -8,14 +8,6 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<UserViewModel, UserIdentity>()
-            .ForMember(m => m.UserName,
-                c => c.MapFrom(
-                    d => d.UserName))
-            .ForMember(m => m.Email,
-                c => c.MapFrom(
-                    d => d.Email));
-
         CreateMap<FullEventViewModel, Event>()
             .ForMember(d => d.Theme,
                 o => o.MapFrom(s => new Theme()

@@ -48,7 +48,6 @@ public static class IS4Config
                 ClientId = "client_swagger",
                 ClientSecrets = { new Secret("client_swagger_secret".Sha256()) },
                 AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
-                AllowedCorsOrigins = { "https://localhost:7000" },
                 AllowedScopes =
                 {
                     "api",
